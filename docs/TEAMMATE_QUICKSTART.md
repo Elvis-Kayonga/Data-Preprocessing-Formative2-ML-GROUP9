@@ -1,56 +1,72 @@
-# Teammate Quickstart (Collaboration + Branch Workflow)
+# Teammate Quickstart 101
 
-This guide shows exactly how teammates should work on separate branches and safely combine work for final submission.
+This is the single official onboarding document for teammates.
 
-## Goal
+If you follow this file exactly, you will be able to:
 
-By the end, each teammate should be able to:
+1. Set up your environment.
+2. Work safely in your own branch.
+3. Run only your task notebook correctly.
+4. Commit only the right files.
+5. Push to GitHub without breaking others.
+6. Open a clean PR for integration into the elvis branch.
 
-1. Pull the latest project state.
-2. Work only in their own branch.
-3. Run only the notebook(s) for their task.
-4. Commit cleanly with meaningful messages.
-5. Push their branch to GitHub.
-6. Open a Pull Request to `elvis` (or `main` if instructed).
+## 1. Project Summary
 
-## Repository and Branching Model
+This project has four assignment tasks:
 
-Recommended branch strategy:
+1. Task 1: Product recommendation model (Elvis primary ownership).
+2. Task 2: Face image processing workflow.
+3. Task 3: Voice audio processing workflow.
+4. Task 4: Multimodal integration demo (face gate -> voice gate -> product recommendation).
 
-1. `main` = stable baseline.
-2. `elvis` = integration branch for this assignment delivery.
-3. Teammate branches = personal feature branches (for example `alice-face`, `bob-voice`, `charles-integration`).
+Main notebook files:
 
-Rule:
+1. notebooks/Task1_Product_Recommendation.ipynb
+2. notebooks/Task2_Face_Image_Processing.ipynb
+3. notebooks/Task3_Voice_Audio_Processing.ipynb
+4. notebooks/Task4_Multimodal_Integration.ipynb
 
-1. Never commit directly on `main`.
-2. Prefer committing work on your own branch, then submit PR.
+## 2. Team Branch Rules (Very Important)
 
-## One-time Setup (Per Teammate)
+1. Do not work directly on main.
+2. Do not work directly on elvis unless you are integrating approved PRs.
+3. Each teammate works in a personal branch (example: alice-face, brian-voice).
+4. Always pull latest elvis before starting work.
+5. Open PR from your personal branch to elvis.
 
-## 1) Clone repo
+Recommended branch model:
+
+1. main = stable baseline.
+2. elvis = assignment integration branch.
+3. teammate branches = personal development branches.
+
+## 3. One-Time Setup on Your Machine
+
+## Step 1: Clone repository
 
 ```bash
 git clone https://github.com/Elvis-Kayonga/Data-Preprocessing-Formative2-ML-GROUP9.git
 cd Data-Preprocessing-Formative2-ML-GROUP9
 ```
 
-## 2) Install dependencies
+## Step 2: Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 3) Confirm remote branches
+## Step 3: Confirm remotes and branches
 
 ```bash
+git remote -v
 git fetch --all
 git branch -a
 ```
 
-## Daily Start Workflow (Always Do This First)
+Expected remote includes origin pointing to GitHub repo URL.
 
-Before doing any work:
+## 4. Daily Start Workflow (Run Every Time Before You Code)
 
 ```bash
 git fetch origin
@@ -58,7 +74,7 @@ git checkout elvis
 git pull origin elvis
 ```
 
-Create/update your own branch from latest `elvis`:
+Create or refresh your personal branch from latest elvis:
 
 ```bash
 git checkout -B <your-branch-name>
@@ -66,60 +82,107 @@ git checkout -B <your-branch-name>
 
 Examples:
 
-1. `git checkout -B alice-face`
-2. `git checkout -B bob-voice`
-3. `git checkout -B diana-integration`
+1. git checkout -B ruth-face
+2. git checkout -B john-voice
+3. git checkout -B mercy-integration
 
-## Task Mapping (Who Does What)
+## 5. Role-Based Task Guide
 
-1. Task 1 Product model notebook: [notebooks/Task1_Product_Recommendation.ipynb](notebooks/Task1_Product_Recommendation.ipynb)
-2. Task 2 Face notebook: [notebooks/Task2_Face_Image_Processing.ipynb](notebooks/Task2_Face_Image_Processing.ipynb)
-3. Task 3 Voice notebook: [notebooks/Task3_Voice_Audio_Processing.ipynb](notebooks/Task3_Voice_Audio_Processing.ipynb)
-4. Task 4 Integration notebook: [notebooks/Task4_Multimodal_Integration.ipynb](notebooks/Task4_Multimodal_Integration.ipynb)
+## A. Face teammate (Task 2)
 
-## Task-specific Steps
+### Input you must provide
 
-## A) Face teammate
+Add image files here:
 
-1. Add image files to `data/images/<your_name>/`.
-2. Run [notebooks/Task2_Face_Image_Processing.ipynb](notebooks/Task2_Face_Image_Processing.ipynb).
-3. Verify output file exists: `data/processed/image_features.csv`.
-4. If the notebook says OpenCV missing, install and rerun:
+1. data/images/<your_name>/
+
+Use at least 3 clear face images:
+
+1. neutral expression
+2. smiling expression
+3. surprised expression
+
+Supported formats:
+
+1. .jpg
+2. .png
+
+### Run notebook
+
+1. Open notebooks/Task2_Face_Image_Processing.ipynb
+2. Run all cells top to bottom.
+
+### Expected outputs
+
+1. data/processed/image_features.csv
+2. outputs/plots/10_face_preview.png (if images found)
+3. outputs/plots/11_face_augmentation.png (if images found)
+
+### If OpenCV error appears
 
 ```bash
 pip install opencv-python scikit-image
 ```
 
-## B) Voice teammate
+## B. Voice teammate (Task 3)
 
-1. Add `.wav` files to `data/audio/<your_name>/`.
-2. Run [notebooks/Task3_Voice_Audio_Processing.ipynb](notebooks/Task3_Voice_Audio_Processing.ipynb).
-3. Verify output file exists: `data/processed/audio_features.csv`.
-4. If the notebook says librosa missing, install and rerun:
+### Input you must provide
+
+Add audio files here:
+
+1. data/audio/<your_name>/
+
+Use at least 3 clips:
+
+1. 2 to 5 seconds each
+2. .wav format
+3. clean speech, low noise
+
+### Run notebook
+
+1. Open notebooks/Task3_Voice_Audio_Processing.ipynb
+2. Run all cells top to bottom.
+
+### Expected outputs
+
+1. data/processed/audio_features.csv
+2. outputs/plots/12_audio_waveform.png (if audio found)
+3. outputs/plots/13_audio_augmentation.png (if audio found)
+
+### If librosa error appears
 
 ```bash
 pip install librosa soundfile
 ```
 
-## C) Integration teammate
+## C. Integration teammate (Task 4)
 
-1. Pull latest branch updates first.
-2. Run [notebooks/Task4_Multimodal_Integration.ipynb](notebooks/Task4_Multimodal_Integration.ipynb).
-3. Confirm gate simulation output and chart generation.
+### Prerequisites
 
-## Commit and Push Workflow (Every Teammate)
+1. Task 1 model exists in models/product_recommendation_model.joblib
+2. Task 2 and Task 3 outputs are ideally available.
 
-After finishing your task:
+### Run notebook
 
-## 1) Check what changed
+1. Open notebooks/Task4_Multimodal_Integration.ipynb
+2. Run all cells top to bottom.
+
+### Expected outputs
+
+1. gate decision scenarios printed
+2. outputs/plots/14_multimodal_gate_results.png
+
+## 6. Safe Commit Workflow (Do Not Skip)
+
+## Step 1: Check changed files
 
 ```bash
 git status
 ```
 
-## 2) Stage only relevant files
+## Step 2: Stage only files for your task
 
-Examples:
+Example for face teammate:
 
 ```bash
 git add notebooks/Task2_Face_Image_Processing.ipynb
@@ -127,32 +190,67 @@ git add data/processed/image_features.csv
 git add outputs/plots/10_face_preview.png outputs/plots/11_face_augmentation.png
 ```
 
-## 3) Commit with clear message
+Example for voice teammate:
 
 ```bash
-git commit -m "feat(face): add executed notebook and extracted image features"
+git add notebooks/Task3_Voice_Audio_Processing.ipynb
+git add data/processed/audio_features.csv
+git add outputs/plots/12_audio_waveform.png outputs/plots/13_audio_augmentation.png
 ```
 
-## 4) Push your branch
+## Step 3: Commit with clear message
+
+```bash
+git commit -m "feat(face): add executed Task2 notebook and image features"
+```
+
+More message examples:
+
+1. feat(voice): add executed Task3 notebook and audio features
+2. fix(face): correct image path and rerun notebook
+3. docs(team): clarify teammate setup steps
+4. data(voice): refresh audio feature csv with new samples
+
+## 7. Push Workflow
+
+Push your branch first time:
 
 ```bash
 git push -u origin <your-branch-name>
 ```
 
-## 5) Open Pull Request
+Push subsequent updates:
 
-On GitHub:
+```bash
+git push origin <your-branch-name>
+```
 
-1. Open PR from your branch -> `elvis`.
-2. Add a short PR description:
-	- what you changed
-	- which notebook was executed
-	- which outputs were generated
-3. Request review.
+## 8. Pull Request Workflow
 
-## If Push Is Rejected
+After pushing branch:
 
-If you see a non-fast-forward error:
+1. Go to GitHub repo.
+2. Create PR from <your-branch-name> to elvis.
+3. Add PR title and description.
+4. Request reviewer.
+
+PR description template:
+
+1. Summary of changes.
+2. Notebook executed.
+3. Output artifacts generated.
+4. Any known limitation.
+
+Example:
+
+1. Updated Task3 voice notebook with real wav samples.
+2. Executed full notebook and exported audio_features.csv.
+3. Generated waveform and augmentation plots.
+4. No runtime errors.
+
+## 9. If Push Is Rejected
+
+If non-fast-forward happens:
 
 ```bash
 git fetch origin
@@ -160,62 +258,145 @@ git pull --rebase origin <your-branch-name>
 git push origin <your-branch-name>
 ```
 
-If conflicts occur during rebase:
+If rebase conflicts appear:
 
-1. Edit conflicted files.
-2. `git add <file>`
-3. `git rebase --continue`
-4. Push again.
+1. open conflicted files.
+2. resolve markers.
+3. git add <file>
+4. git rebase --continue
+5. repeat until rebase ends.
+6. push again.
 
-## Integration Maintainer Flow (Elvis Branch Owner)
+## 10. If Your Branch Is Behind Elvis
 
-When reviewing teammate PRs:
+To update your branch with latest elvis:
 
-1. Pull latest `elvis`.
-2. Merge one PR at a time.
-3. Run quick verification after each merge:
+```bash
+git fetch origin
+git checkout <your-branch-name>
+git rebase origin/elvis
+```
+
+If rebase is not preferred by your team, use merge:
+
+```bash
+git fetch origin
+git checkout <your-branch-name>
+git merge origin/elvis
+```
+
+## 11. Files You Must Not Randomly Edit
+
+Only edit what belongs to your role unless coordinated:
+
+1. notebooks/Task1_Product_Recommendation.ipynb (owner: Elvis)
+2. src/data_pipeline.py and src/train_product_model.py (core pipeline)
+3. requirements.txt (only if absolutely necessary)
+
+## 12. Mandatory Verification Before PR
+
+Run this checklist:
+
+1. Notebook runs from first to last cell.
+2. No red error output in notebook.
+3. New files are relevant to your task.
+4. No temporary scripts included.
+5. git status is clean after commit.
+
+Helpful checks:
+
+```bash
+git status
+git log --oneline -n 5
+```
+
+## 13. Final Integration Flow (For Branch Owner)
+
+For maintainer integrating teammate PRs into elvis:
+
+1. Merge one PR at a time.
+2. After each merge run:
 
 ```bash
 python src/run_all.py
 python -m nbconvert --to notebook --execute notebooks/Task4_Multimodal_Integration.ipynb --output Task4_Multimodal_Integration.ipynb --output-dir notebooks
 ```
 
-4. If everything passes, push updated `elvis`.
+3. If checks pass, push updated elvis.
 
-## Final Submission Checklist
+## 14. Common Mistakes and Fixes
 
-Before final submission:
+1. Mistake: Committed on main.
+Fix: create new branch from main state, cherry-pick commit, reset main back.
 
-1. All 4 notebooks exist and are executed.
-2. No obsolete notebook name variants remain.
-3. Key artifacts exist:
-	- `models/product_recommendation_model.joblib`
-	- `models/product_model_metrics.json`
-	- `data/processed/merged_customer_dataset.csv`
-	- `data/processed/image_features.csv` (when face teammate data is ready)
-	- `data/processed/audio_features.csv` (when voice teammate data is ready)
-4. Plots in `outputs/plots/` are present.
-5. Branch `elvis` is pushed and up to date.
+2. Mistake: Added unrelated files (temp scripts, caches).
+Fix: git restore --staged <file> then remove file locally.
 
-## Suggested Commit Message Format
+3. Mistake: Notebook not executed before commit.
+Fix: rerun notebook fully, save, recommit.
 
-Use one of these prefixes:
+4. Mistake: Push rejected.
+Fix: fetch + rebase + push as shown above.
 
-1. `feat:` new functionality
-2. `fix:` bug fix
-3. `docs:` documentation change
-4. `chore:` maintenance/cleanup
-5. `data:` dataset or generated artifact updates
+5. Mistake: Wrong target branch in PR.
+Fix: change PR base branch to elvis.
 
-Examples:
+## 15. Submission-Ready Evidence Checklist
 
-1. `feat(voice): add executed Task3 notebook with augmentation outputs`
-2. `data(face): update image feature csv with member samples`
-3. `docs: clarify branch workflow for teammate PR process`
+At submission time, confirm:
 
-## Quick FAQ
+1. all four task notebooks exist and are executed.
+2. processed csv outputs exist.
+3. model artifacts exist.
+4. required plots exist.
+5. branch elvis is up to date on GitHub.
 
-1. Do we push notebooks? Yes, push executed notebooks in `notebooks/`.
-2. Can I edit another teammate's notebook? Only via PR and with explicit review.
-3. What if optional package is missing? Install it, but notebooks also contain fallback behavior.
-4. Which branch should final work target? `elvis` unless the team lead says otherwise.
+Core files to verify:
+
+1. models/product_recommendation_model.joblib
+2. models/product_model_metrics.json
+3. data/processed/merged_customer_dataset.csv
+4. data/processed/image_features.csv
+5. data/processed/audio_features.csv
+6. notebooks/Task1_Product_Recommendation.ipynb
+7. notebooks/Task2_Face_Image_Processing.ipynb
+8. notebooks/Task3_Voice_Audio_Processing.ipynb
+9. notebooks/Task4_Multimodal_Integration.ipynb
+
+## 16. Quick Command Reference
+
+Start work:
+
+```bash
+git fetch origin
+git checkout elvis
+git pull origin elvis
+git checkout -B <your-branch-name>
+```
+
+Commit work:
+
+```bash
+git status
+git add <files>
+git commit -m "type(scope): short message"
+```
+
+Push work:
+
+```bash
+git push -u origin <your-branch-name>
+```
+
+Sync if behind:
+
+```bash
+git fetch origin
+git pull --rebase origin <your-branch-name>
+```
+
+## 17. Final Note
+
+Work small, commit often, and push frequently.
+
+If everyone follows this 101 guide, branch conflicts reduce a lot and final submission becomes smooth.
