@@ -1,4 +1,13 @@
 import os
+import warnings
+import logging
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
+warnings.filterwarnings("ignore", category=UserWarning)
+
+logging.getLogger("tensorflow").setLevel(logging.ERROR)
+
 import joblib
 import pandas as pd
 import numpy as np
