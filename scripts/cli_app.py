@@ -1,109 +1,262 @@
-import os
-import warnings
+import io
+import time
+from voice_preprocessing import process_audio
+from image_preprocessing import extract_image_features   # loads MobileNetV2
+import numpy as np
+import pandas as pd
+import joblib
 import logging
+import warnings
+import os
+import sys
+
+# Suppress ALL TensorFlow/oneDNN C++ stderr logs
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['ABSL_MIN_LOG_LEVEL'] = '3'
+os.environ['GRPC_VERBOSITY'] = 'ERROR'
 
-warnings.filterwarnings("ignore", category=UserWarning)
+# Redirect stderr to devnull during the TF import window
+_real_stderr = sys.stderr
+sys.stderr = open(os.devnull, 'w')
 
-logging.getLogger("tensorflow").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore")
+logging.disable(logging.CRITICAL)
 
-import joblib
-import pandas as pd
-import numpy as np
-from image_preprocessing import extract_image_features
-from voice_preprocessing import process_audio
+# All TF-touching imports here, inside the silenced window 
 
+# Restore stderr now that TF is done loading
+sys.stderr.close()
+sys.stderr = _real_stderr
 
-# Load saved models and encoders
-face_model = joblib.load("../models/face_recognition_model.pkl")
-voice_model = joblib.load("../models/speaker_model.pkl")
-product_model = joblib.load("../models/product_xgb_model.pkl") 
-face_encoder = joblib.load("../encoders/face_label_encoder.pkl")
-product_label_encoder = joblib.load("../encoders/product_label_encoder.pkl")
-product_columns = joblib.load("../encoders/model_columns.pkl")  
+# Safe imports
 
-# Load merged dataset
-merged_dataset = pd.read_csv("../extracted_datasets/merged_dataset.csv")
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
+    from rich.prompt import Prompt
+    from rich.rule import Rule
+    from rich.table import Table
+    from rich import box
+    from rich.align import Align
+except ImportError:
+    os.system(f"{sys.executable} -m pip install rich -q")
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
+    from rich.prompt import Prompt
+    from rich.rule import Rule
+    from rich.table import Table
+    from rich import box
+    from rich.align import Align
 
-# Mapping
+console = Console()
+
+# Label mapping
 label_to_customer_id = {
-    "sharif": 128,
+    "sharif":   128,
     "paulette": 103,
-    "samuel": 152,
-    "kayonga": 121,
+    "samuel":   152,
+    "kayonga":  121,
 }
 
+# UI Helpers
 
-# Main CLI Function
+
+def step_header(number: int, title: str):
+    console.print()
+    console.print(Rule(
+        f"[bold cyan]Step {number}[/bold cyan]  [white]{title}[/white]",
+        style="dim cyan"
+    ))
+
+
+def success(msg: str):
+    console.print(f"\n  [bold green]✔[/bold green]  {msg}")
+
+
+def denied(msg: str):
+    console.print()
+    console.print(Panel(
+        f"[bold red]✘  Access Denied[/bold red]\n\n[dim]{msg}[/dim]",
+        border_style="red",
+        padding=(1, 4),
+    ))
+    console.print()
+    sys.exit(0)
+
+
+def error(msg: str):
+    console.print(f"\n  [bold red]✘[/bold red]  [red]{msg}[/red]\n")
+    sys.exit(1)
+
+
+def spinner(label: str, duration: float = 1.6):
+    with Progress(
+        SpinnerColumn(spinner_name="dots2", style="cyan"),
+        TextColumn(f"[dim]{label}[/dim]"),
+        transient=True,
+        console=console,
+    ) as p:
+        p.add_task("", total=None)
+        time.sleep(duration)
+
+
+def load_models():
+    with Progress(
+        SpinnerColumn(spinner_name="dots", style="cyan"),
+        TextColumn("[dim]{task.description}[/dim]"),
+        BarColumn(bar_width=30, style="cyan", complete_style="green"),
+        TextColumn("[green]{task.percentage:>3.0f}%[/green]"),
+        transient=True,
+        console=console,
+    ) as p:
+        task = p.add_task("Loading models…", total=6)
+
+        face_model = joblib.load("../models/face_recognition_model.pkl")
+        p.advance(task)
+        voice_model = joblib.load("../models/speaker_model.pkl")
+        p.advance(task)
+        product_model = joblib.load("../models/product_xgb_model.pkl")
+        p.advance(task)
+        face_encoder = joblib.load("../encoders/face_label_encoder.pkl")
+        p.advance(task)
+        product_encoder = joblib.load("../encoders/product_label_encoder.pkl")
+        p.advance(task)
+        product_columns = joblib.load("../encoders/model_columns.pkl")
+        p.advance(task)
+
+    return face_model, voice_model, product_model, face_encoder, product_encoder, product_columns
+
+# Main
 
 def main():
-    print("\n=== Welcome to Secure Product Recommendation CLI ===\n")
 
-    # Step 1: Face Recognition
-    image_path = input("Enter path to face image: ").strip()
+    # Banner
+    console.print()
+    console.print(Panel.fit(
+        Align.center(
+            "[bold white]Secure Product Recommendation System[/bold white]\n"
+            "[dim]Multimodal Authentication  ·  ML Group 9[/dim]"
+        ),
+        border_style="cyan",
+        padding=(1, 6),
+    ))
+    console.print()
+
+    # Load models
+    console.print("[dim]  Initialising system…[/dim]")
+    (face_model, voice_model, product_model,
+     face_encoder, product_encoder, product_columns) = load_models()
+    merged_dataset = pd.read_csv("../extracted_datasets/merged_dataset.csv")
+    success("All models loaded successfully")
+
+    # Pipeline overview
+    console.print()
+    overview = Table(box=box.SIMPLE_HEAVY, show_header=False, padding=(0, 2))
+    overview.add_column(style="dim cyan", no_wrap=True)
+    overview.add_column(style="white")
+    overview.add_row("Step 1", "Face recognition   — verify your identity")
+    overview.add_row(
+        "Step 2", "Product prediction — personalised recommendation")
+    overview.add_row("Step 3", "Voice verification — confirm your identity")
+    console.print(overview)
+
+    # STEP 1 — FACE RECOGNITION
+    step_header(1, "Face Recognition")
+
+    image_path = Prompt.ask("\n  [cyan]Path to your face image[/cyan]").strip()
+
     if not os.path.exists(image_path):
-        print("Error: Image file not found.")
-        return
+        error(f"File not found: {image_path}")
+
+    spinner("Analysing facial features…", duration=1.8)
 
     image_features = extract_image_features(image_path)
     if image_features is None:
-        print("Error processing image.")
-        return
-    image_features = image_features.reshape(1, -1)
+        error("Could not process the image. Check the file is a valid JPG/PNG.")
 
-    predicted_face_encoded = face_model.predict(image_features)[0]
+    predicted_face_encoded = face_model.predict(
+        image_features.reshape(1, -1))[0]
     predicted_face = face_encoder.inverse_transform(
         [predicted_face_encoded])[0]
 
-    if predicted_face == "Unknown":
-        print("Access Denied: User not recognized.")
-        return
+    if predicted_face.lower() == "unknown":
+        denied("Your face was not recognised in our system.")
 
-    print(f"\nFace recognized as: {predicted_face}")
+    success(
+        f"Identity confirmed  →  [bold white]{predicted_face.title()}[/bold white]")
 
-    # Step 2: Map face to customer ID
+    # STEP 2 — PRODUCT PREDICTION (held until voice passes)
+    step_header(2, "Product Prediction")
+
     customer_id = label_to_customer_id.get(predicted_face.lower())
     if customer_id is None:
-        print("Access Denied: Customer not found in dataset.")
-        return
+        denied("Recognised face is not linked to a customer account.")
 
     customer_row = merged_dataset[merged_dataset['customer_id'] == int(
         customer_id)]
     if customer_row.empty:
-        print("Error: No data found for this customer.")
-        return
+        error("No transaction data found for this customer.")
 
-    # Step 3: Prepare product features
+    spinner("Computing personalised recommendation…", duration=1.4)
+
     product_features = customer_row.reindex(
-        columns=product_columns, fill_value=0)
-    product_features = product_features.values.astype(float)
-    
-    # Step 4: Product recommendation
-    product_prediction_encoded = product_model.predict(product_features)[0]
-    product_prediction = product_label_encoder.inverse_transform(
-        [product_prediction_encoded])[0]
+        columns=product_columns, fill_value=0
+    ).values.astype(float)
+    product_encoded = product_model.predict(product_features)[0]
+    product_name = product_encoder.inverse_transform([product_encoded])[0]
 
-    # Step 5: Voice Verification
-    audio_path = input("\nEnter path to voice recording: ").strip()
+    success("Recommendation ready  →  [dim]pending voice verification[/dim]")
+
+
+    # STEP 3 — VOICE VERIFICATION
+    step_header(3, "Voice Verification")
+
+    audio_path = Prompt.ask(
+        "\n  [cyan]Path to your voice recording[/cyan]").strip()
+
     if not os.path.exists(audio_path):
-        print("Error: Audio file not found.")
-        return
+        error(f"File not found: {audio_path}")
+
+    spinner("Analysing voiceprint…", duration=1.6)
 
     audio_features = process_audio(audio_path)
     if audio_features is None:
-        print("Error processing audio.")
-        return
-    audio_features = audio_features.reshape(1, -1) 
+        error("Could not process the audio. Check the file is a valid WAV.")
 
-    predicted_voice = voice_model.predict(audio_features)[0]
+    predicted_voice = voice_model.predict(audio_features.reshape(1, -1))[0]
 
     if predicted_voice.lower() != predicted_face.lower():
-        print("Access Denied: Voice does not match recognized face.")
-        return
+        denied(
+            f"Voice matched '[bold]{predicted_voice.title()}[/bold]' "
+            f"but face matched '[bold]{predicted_face.title()}[/bold]'. "
+            f"Both identities must agree."
+        )
 
-    print(f"\nVoice verified successfully for {predicted_face}.")
-    print(f"Recommended Product for {predicted_face} is {product_prediction}\n")
+    success(
+        f"Voice confirmed  →  [bold white]{predicted_face.title()}[/bold white]")
+
+    # RESULT
+    console.print()
+    console.print(Rule(style="green"))
+
+    result = Table(box=box.SIMPLE_HEAVY, show_header=False, padding=(0, 3))
+    result.add_column(style="dim green", no_wrap=True)
+    result.add_column(style="bold white")
+    result.add_row("Verified user",       predicted_face.title())
+    result.add_row("Recommended product", product_name)
+    result.add_row("Customer ID",         str(customer_id))
+
+    console.print(Panel(
+        result,
+        title="[bold green]✔  Authentication Successful[/bold green]",
+        border_style="green",
+        padding=(1, 2),
+    ))
+    console.print()
+
 
 if __name__ == "__main__":
     main()
