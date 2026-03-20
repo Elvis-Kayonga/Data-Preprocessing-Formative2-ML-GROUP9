@@ -15,7 +15,9 @@ This repository contains the current multimodal assignment assets for:
 - extracted_datasets/
   - audio_features.csv
   - images.zip
-  -merged_dataset.csv
+  - merged_dataset.csv
+  - audio_files.zip
+  - image_features.csv
 - models/
   - face_recognition_model.pkl
   - face_label_encoder (1).pkl
