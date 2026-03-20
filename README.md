@@ -63,7 +63,8 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-## Notes
+## Run app
 
-- The voice notebook currently includes Google Colab-specific paths and drive mounting.
-- The face notebook trains and saves a label encoder named face_label_encoder.pkl
+```bash
+python cli_app.py
+
